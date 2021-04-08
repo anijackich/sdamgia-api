@@ -23,6 +23,7 @@ class SdamGIA:
             'sp': f'https://sp-ege.{self._BASE_DOMAIN}',
             'hist': f'https://hist-ege.{self._BASE_DOMAIN}',
         }
+        self.tesseract_src = 'tesseract'
 
     def get_problem_by_id(self, subject, id):
         """
@@ -35,7 +36,8 @@ class SdamGIA:
         :type subject: str
         """
 
-        doujin_page = requests.get(f'{self._SUBJECT_BASE_URL[subject]}/problem?id={id}')
+        doujin_page = requests.get(
+            f'{self._SUBJECT_BASE_URL[subject]}/problem?id={id}')
         soup = BeautifulSoup(doujin_page.content, 'html.parser')
 
         probBlock = soup.find('div', {'class': 'prob_maindiv'})
@@ -43,7 +45,8 @@ class SdamGIA:
             return None
 
         URL = f'{self._SUBJECT_BASE_URL[subject]}/problem?id={id}'
-        TOPIC_ID = ' '.join(probBlock.find('span', {'class': 'prob_nums'}).text.split()[1:][:-2])
+        TOPIC_ID = ' '.join(probBlock.find(
+            'span', {'class': 'prob_nums'}).text.split()[1:][:-2])
         ID = id
 
         CONDITION, SOLUTION, ANSWER, ANALOGS = {}, {}, '', []
@@ -57,10 +60,13 @@ class SdamGIA:
                         'images': [i['src'] for i in probBlock.find_all('div', {'class': 'pbody'})[1].find_all('img')]
                         }
         if probBlock.find('div', {'class': 'answer'}):
-            ANSWER = probBlock.find('div', {'class': 'answer'}).text.replace('Ответ: ', '')
+            ANSWER = probBlock.find(
+                'div', {'class': 'answer'}).text.replace('Ответ: ', '')
         if probBlock.find('div', {'class': 'minor'}).find_all('a'):
-            ANALOGS = [i.text for i in probBlock.find('div', {'class': 'minor'}).find_all('a')]
-            if 'Все' in ANALOGS: ANALOGS.remove('Все')
+            ANALOGS = [i.text for i in probBlock.find(
+                'div', {'class': 'minor'}).find_all('a')]
+            if 'Все' in ANALOGS:
+                ANALOGS.remove('Все')
 
         return {'id': ID, 'topic': TOPIC_ID, 'condition': CONDITION, 'solution': SOLUTION, 'answer': ANSWER,
                 'analogs': ANALOGS, 'url': URL}
@@ -78,7 +84,8 @@ class SdamGIA:
         :param page: Номер страницы поиска
         :type page: int
         """
-        doujin_page = requests.get(f'{self._SUBJECT_BASE_URL[subject]}/search?search={request}&page={str(page)}')
+        doujin_page = requests.get(
+            f'{self._SUBJECT_BASE_URL[subject]}/search?search={request}&page={str(page)}')
         soup = BeautifulSoup(doujin_page.content, 'html.parser')
         return [i.text.split()[-1] for i in soup.find_all('span', {'class': 'prob_nums'})]
 
@@ -92,12 +99,12 @@ class SdamGIA:
         :param testid: Идентификатор теста
         :type testid: str
         """
-        doujin_page = requests.get(f'{self._SUBJECT_BASE_URL[subject]}/test?id={testid}')
+        doujin_page = requests.get(
+            f'{self._SUBJECT_BASE_URL[subject]}/test?id={testid}')
         soup = BeautifulSoup(doujin_page.content, 'html.parser')
         return [i.text.split()[-1] for i in soup.find_all('span', {'class': 'prob_nums'})]
 
     def get_category_by_id(self, subject, categoryid, page=1):
-
         """
         Получение списка задач, включенных в категорию
 
@@ -111,7 +118,8 @@ class SdamGIA:
         :type page: int
         """
 
-        doujin_page = requests.get(f'{self._SUBJECT_BASE_URL[subject]}/test?&filter=all&theme={categoryid}&page={page}')
+        doujin_page = requests.get(
+            f'{self._SUBJECT_BASE_URL[subject]}/test?&filter=all&theme={categoryid}&page={page}')
         soup = BeautifulSoup(doujin_page.content, 'html.parser')
         return [i.text.split()[-1] for i in soup.find_all('span', {'class': 'prob_nums'})]
 
@@ -123,7 +131,8 @@ class SdamGIA:
         :type subject: str
         """
 
-        doujin_page = requests.get(f'{self._SUBJECT_BASE_URL[subject]}/prob_catalog')
+        doujin_page = requests.get(
+            f'{self._SUBJECT_BASE_URL[subject]}/prob_catalog')
         soup = BeautifulSoup(doujin_page.content, 'html.parser')
         catalog = []
         CATALOG = []
@@ -135,10 +144,14 @@ class SdamGIA:
                 catalog.append(i)
 
         for topic in catalog[1:]:
-            TOPIC_NAME = topic.find('b', {'class': 'cat_name'}).text.split('. ')[1]
-            TOPIC_ID = topic.find('b', {'class': 'cat_name'}).text.split('. ')[0]
-            if TOPIC_ID[0] == ' ': TOPIC_ID = TOPIC_ID[2:]
-            if TOPIC_ID.find('Задания ') == 0: TOPIC_ID = TOPIC_ID.replace('Задания ', '')
+            TOPIC_NAME = topic.find(
+                'b', {'class': 'cat_name'}).text.split('. ')[1]
+            TOPIC_ID = topic.find(
+                'b', {'class': 'cat_name'}).text.split('. ')[0]
+            if TOPIC_ID[0] == ' ':
+                TOPIC_ID = TOPIC_ID[2:]
+            if TOPIC_ID.find('Задания ') == 0:
+                TOPIC_ID = TOPIC_ID.replace('Задания ', '')
 
             CATALOG.append(
                 dict(
@@ -147,7 +160,8 @@ class SdamGIA:
                     categories=[
                         dict(
                             category_id=i['data-id'],
-                            category_name=i.find('a', {'class': 'cat_name'}).text
+                            category_name=i.find(
+                                'a', {'class': 'cat_name'}).text
                         )
                         for i in
                         topic.find('div', {'class': 'cat_children'}).find_all('div', {'class': 'cat_category'})]
@@ -174,7 +188,8 @@ class SdamGIA:
             problems = {'full': 1}
 
         if 'full' in problems:
-            dif = {f'prob{i}': problems['full'] for i in range(1, len(sdamgia.get_catalog(subject)) + 1)}
+            dif = {f'prob{i}': problems['full'] for i in range(
+                1, len(self.get_catalog(subject)) + 1)}
         else:
             dif = {f'prob{i}': problems[i] for i in problems}
 
@@ -222,8 +237,10 @@ class SdamGIA:
         :type pdf: str
 
         """
+
         def a(a):
-            if a == False: return ''
+            if a == False:
+                return ''
             return a
 
         return self._SUBJECT_BASE_URL[subject] + requests.get(f'{self._SUBJECT_BASE_URL[subject]}/test?'
@@ -231,8 +248,32 @@ class SdamGIA:
                                                               f'&key={a(key)}&crit={a(crit)}&pre={a(instruction)}&dcol={a(col)}',
                                                               allow_redirects=False).headers['location']
 
+    def search_by_img(self, subject, path):
+        """
+        Поиск задач по тексту на изображении
+
+        :param path: Путь до изображения
+        :type path: str
+        """
+        import images
+
+        images.tesseract_cmd = self.tesseract_src
+
+        result = []
+        t = images.img_to_str(path).split()
+        print(t)
+        for i in range(0, len(t)):
+            try:
+                for p in self.search(subject, ' '.join([t[x] for x in range(i, i + 9)])):
+                    if p not in result:
+                        result.append(p)
+            except Exception as E:
+                break
+        return result
+
 
 if __name__ == '__main__':
     sdamgia = SdamGIA()
     test = sdamgia.get_problem_by_id('math', '1001')
     print(test)
+
