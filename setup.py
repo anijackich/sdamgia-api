@@ -13,7 +13,7 @@ setup(
     url='https://github.com/anijackich/sdamgia-api',
     license='MIT',
     install_requires=['requests', 'beautifulsoup4'],
-    package_dir='sdamgia-api',
+    packages = ['sdamgia'],
     classifiers=[
         'License :: OSI Approved :: MIT License',
         'Operating System :: OS Independent',
