@@ -26,8 +26,9 @@ SdamGIA Api
 
     $ pip3 install pytesseract
 
-А так же [Tesseract-OCR](https://www.severcart.ru/blog/all/install_tesseract/)
+А также [Tesseract-OCR](https://www.severcart.ru/blog/all/install_tesseract/)
 
+Обратите внимание, что для корректной работы нужен русский языковой пакет
 
 ## Использование
 
@@ -159,7 +160,7 @@ pdf: Версия генерируемого pdf документа
     m - версия с большим полем
 ```
 
-### Поиск задач по изображению
+### Поиск задач по изображению <sup>beta</sup>
 
 С помощью sdamgia-api вы можете искать задачи по тексту на изображении. Например, на фотографии распечатки.
 

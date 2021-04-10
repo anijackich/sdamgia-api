@@ -2,7 +2,7 @@
 
 from bs4 import BeautifulSoup
 import requests
-
+import threading
 
 class SdamGIA:
     def __init__(self):
@@ -252,23 +252,47 @@ class SdamGIA:
         """
         Поиск задач по тексту на изображении
 
+        :param subject:
         :param path: Путь до изображения
         :type path: str
         """
-        import images
 
-        images.tesseract_cmd = self.tesseract_src
+        from sdamgia import images
 
         result = []
-        t = images.img_to_str(path).split()
-        print(t)
-        for i in range(0, len(t)):
+        words_from_img = images.img_to_str(path, self.tesseract_src).split()
+
+
+        print(words_from_img)
+        # lock = threading.Semaphore(16)
+
+        def parse(i):
             try:
-                for p in self.search(subject, ' '.join([t[x] for x in range(i, i + 9)])):
-                    if p not in result:
-                        result.append(p)
+                request_phrase = ' '.join(
+                    [words_from_img[x] for x in range(i, i + 10)])
+
+                doujin_page = requests.get(
+                    f'{self._SUBJECT_BASE_URL[subject]}/search?search={request_phrase}&page={str(1)}')
+                soup = BeautifulSoup(doujin_page.content, 'html.parser')
+                problem_ids = [i.text.split()[-1]
+                               for i in soup.find_all('span', {'class': 'prob_nums'})]
+
+                for id in problem_ids:
+                    if id not in result:
+                        result.append(id)
             except Exception as E:
-                break
+                pass
+
+        thread_pool = []
+
+        for i in range(0, len(words_from_img)):
+            thread = threading.Thread(target=parse, args=(i,))
+            thread_pool.append(thread)
+            thread.start()
+
+        for thread in thread_pool:
+            thread.join()
+
         return result
 
 
@@ -277,3 +301,8 @@ if __name__ == '__main__':
     test = sdamgia.get_problem_by_id('math', '1001')
     print(test)
 
+
+# sdamgia = SdamGIA()
+# sdamgia.tesseract_src = "C:/Program Files/Tesseract-OCR/tesseract.exe"
+#
+# print(sdamgia.search_by_img('rus', os.path.normpath('test_images/pfdVxnWc1ww.jpg')))
