@@ -3,8 +3,6 @@
 from bs4 import BeautifulSoup
 import requests
 import threading
-import asyncio
-from pyppeteer import launch
 from os import path, remove
 
 class SdamGIA:
@@ -28,7 +26,7 @@ class SdamGIA:
         }
         self.tesseract_src = 'tesseract'
 
-    def get_problem_by_id(self, subject, id, path_to_img=None, path_to_html=''):
+    def get_problem_by_id(self, subject, id, img=None, path_to_img=None, path_to_html='', grabzit_auth=None):
         """
         Получение информации о задаче по ее идентификатору
 
@@ -38,11 +36,19 @@ class SdamGIA:
         :param id: Идентификатор задачи
         :type subject: str
 
-        :param path_to_img: Путь до изображения, куда сохранить сохранить задание. Необязательный параметр.
+        :param img: Принимает одно из двух значений: pyppeteer или grabzit;
+                    В результате будет использована одна из библиотек для генерации изображения с задачей.
+                    Если не передавать этот аргумент, изображение генерироваться не будет
+        :type img: str
+
+        :param path_to_img: Путь до изображения, куда сохранить сохранить задание.
         :type path_to_img: str
 
-        :param path_to_html: Можно указать директорию, куда будут сохраняться временные html-файлы заданий
+        :param path_to_html: Можно указать директорию, куда будут сохраняться временные html-файлы заданий при использовании pyppeteer
         :type path_to_html: str
+
+        :param grabzit_auth: При использовании GrabzIT укажите данные для аутентификации: {"AppKey":"...", "AppSecret":"..."}
+        :type grabzit_auth: dict
         """
 
         doujin_page = requests.get(
@@ -77,16 +83,24 @@ class SdamGIA:
             if 'Все' in ANALOGS:
                 ANALOGS.remove('Все')
 
-        if not path_to_img is None:
-            open(f'{path_to_html}{id}.html', 'w').write(str(probBlock))
-            async def main():
-                browser = await launch()
-                page = await browser.newPage()
-                await page.goto('file:' + path.abspath(f'{path_to_html}{id}.html'))
-                await page.screenshot({'path': path_to_img, 'fullPage': 'true'})
-                await browser.close()
-            asyncio.get_event_loop().run_until_complete(main())
-            remove(path.abspath(f'{path_to_html}{id}.html'))
+        if not img is None:
+            if img == 'pyppeteer':
+                import asyncio
+                from pyppeteer import launch
+                open(f'{path_to_html}{id}.html', 'w').write(str(probBlock))
+                async def main():
+                    browser = await launch()
+                    page = await browser.newPage()
+                    await page.goto('file:' + path.abspath(f'{path_to_html}{id}.html'))
+                    await page.screenshot({'path': path_to_img, 'fullPage': 'true'})
+                    await browser.close()
+                asyncio.get_event_loop().run_until_complete(main())
+                remove(path.abspath(f'{path_to_html}{id}.html'))
+            elif img == 'grabzit':
+                from GrabzIt import GrabzItClient
+                grabzIt = GrabzItClient.GrabzItClient(grabzit_auth['AppKey'], grabzit_auth['AppSecret'])
+                grabzIt.HTMLToImage(str(probBlock))
+                grabzIt.SaveTo(path_to_img)
 
         return {'id': ID, 'topic': TOPIC_ID, 'condition': CONDITION, 'solution': SOLUTION, 'answer': ANSWER,
                 'analogs': ANALOGS, 'url': URL}
@@ -282,10 +296,6 @@ class SdamGIA:
         result = []
         words_from_img = images.img_to_str(path, self.tesseract_src).split()
 
-
-        print(words_from_img)
-        # lock = threading.Semaphore(16)
-
         def parse(i):
             try:
                 request_phrase = ' '.join(
@@ -319,5 +329,7 @@ class SdamGIA:
 
 if __name__ == '__main__':
     sdamgia = SdamGIA()
-    test = sdamgia.get_problem_by_id('math', '1001', path_to_img='op.png')
+    test = sdamgia.get_problem_by_id('math', '1001')
     print(test)
+
+
