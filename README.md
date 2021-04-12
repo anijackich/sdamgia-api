@@ -62,6 +62,11 @@ sdamgia.get_problem_by_id(subject, id)
   'url': 'https://math-ege.sdamgia.ru/problem?id=1001'
 }
 ```
+Можно сгенерировать задачу в виде изображения:
+```python
+path_to_img = '/imgs/problem.png'
+sdamgia.get_problem_by_id(subject, id, path_to_img=path_to_img)
+```
 
 
 ### Поиск задач по запросу

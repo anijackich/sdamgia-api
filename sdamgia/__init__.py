@@ -3,6 +3,9 @@
 from bs4 import BeautifulSoup
 import requests
 import threading
+import asyncio
+from pyppeteer import launch
+from os import path, remove
 
 class SdamGIA:
     def __init__(self):
@@ -25,7 +28,7 @@ class SdamGIA:
         }
         self.tesseract_src = 'tesseract'
 
-    def get_problem_by_id(self, subject, id):
+    def get_problem_by_id(self, subject, id, path_to_img=None, path_to_html=''):
         """
         Получение информации о задаче по ее идентификатору
 
@@ -34,6 +37,12 @@ class SdamGIA:
 
         :param id: Идентификатор задачи
         :type subject: str
+
+        :param path_to_img: Путь до изображения, куда сохранить сохранить задание. Необязательный параметр.
+        :type path_to_img: str
+
+        :param path_to_html: Можно указать директорию, куда будут сохраняться временные html-файлы заданий
+        :type path_to_html: str
         """
 
         doujin_page = requests.get(
@@ -67,6 +76,17 @@ class SdamGIA:
                 'div', {'class': 'minor'}).find_all('a')]
             if 'Все' in ANALOGS:
                 ANALOGS.remove('Все')
+
+        if not path_to_img is None:
+            open(f'{path_to_html}{id}.html', 'w').write(str(probBlock))
+            async def main():
+                browser = await launch()
+                page = await browser.newPage()
+                await page.goto('file:' + path.abspath(f'{path_to_html}{id}.html'))
+                await page.screenshot({'path': path_to_img, 'fullPage': 'true'})
+                await browser.close()
+            asyncio.get_event_loop().run_until_complete(main())
+            remove(path.abspath(f'{path_to_html}{id}.html'))
 
         return {'id': ID, 'topic': TOPIC_ID, 'condition': CONDITION, 'solution': SOLUTION, 'answer': ANSWER,
                 'analogs': ANALOGS, 'url': URL}
@@ -296,13 +316,8 @@ class SdamGIA:
         return result
 
 
+
 if __name__ == '__main__':
     sdamgia = SdamGIA()
-    test = sdamgia.get_problem_by_id('math', '1001')
+    test = sdamgia.get_problem_by_id('math', '1001', path_to_img='op.png')
     print(test)
-
-
-# sdamgia = SdamGIA()
-# sdamgia.tesseract_src = "C:/Program Files/Tesseract-OCR/tesseract.exe"
-#
-# print(sdamgia.search_by_img('rus', os.path.normpath('test_images/pfdVxnWc1ww.jpg')))

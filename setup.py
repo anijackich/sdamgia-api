@@ -4,7 +4,7 @@ from setuptools import setup
 
 setup(
     name='sdamgia-api',
-    version='0.1.1',
+    version='0.1.4',
     author='anijack',
     author_email='anijackich@gmail.com',
     description='Python модуль для взаимодействия с образовательным порталом СДАМ ГИА',
@@ -12,7 +12,7 @@ setup(
     long_description_content_type='text/markdown',
     url='https://github.com/anijackich/sdamgia-api',
     license='MIT',
-    install_requires=['requests', 'beautifulsoup4', 'threading'],
+    install_requires=['requests', 'beautifulsoup4', 'pyppeteer'],
     packages = ['sdamgia'],
     classifiers=[
         'License :: OSI Approved :: MIT License',
