@@ -71,22 +71,40 @@ class SdamGIA:
 
         CONDITION, SOLUTION, ANSWER, ANALOGS = {}, {}, '', []
 
-        if probBlock.find_all('div', {'class': 'pbody'})[0]:
+        try:
             CONDITION = {'text': probBlock.find_all('div', {'class': 'pbody'})[0].text,
                          'images': [i['src'] for i in probBlock.find_all('div', {'class': 'pbody'})[0].find_all('img')]
                          }
-        if probBlock.find_all('div', {'class': 'pbody'})[1]:
+        except IndexError:
+            pass
+
+        try:
             SOLUTION = {'text': probBlock.find_all('div', {'class': 'pbody'})[1].text,
                         'images': [i['src'] for i in probBlock.find_all('div', {'class': 'pbody'})[1].find_all('img')]
                         }
-        if probBlock.find('div', {'class': 'answer'}):
+        except IndexError:
+            pass
+        except AttributeError:
+            pass
+
+        try:
             ANSWER = probBlock.find(
                 'div', {'class': 'answer'}).text.replace('Ответ: ', '')
-        if probBlock.find('div', {'class': 'minor'}).find_all('a'):
+        except IndexError:
+            pass
+        except AttributeError:
+            pass
+
+        try:
             ANALOGS = [i.text for i in probBlock.find(
                 'div', {'class': 'minor'}).find_all('a')]
             if 'Все' in ANALOGS:
                 ANALOGS.remove('Все')
+        except IndexError:
+            pass
+        except AttributeError:
+            pass
+
 
         if not img is None:
 
@@ -343,6 +361,5 @@ class SdamGIA:
 
 if __name__ == '__main__':
     sdamgia = SdamGIA()
-    test = sdamgia.get_problem_by_id('math', '1001')
+    test = sdamgia.get_problem_by_id('math', '505452')
     print(test)
-

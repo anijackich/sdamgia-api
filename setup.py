@@ -4,7 +4,7 @@ from setuptools import setup
 
 setup(
     name='sdamgia-api',
-    version='0.1.6',
+    version='0.1.7',
     author='anijack',
     author_email='anijackich@gmail.com',
     description='Python модуль для взаимодействия с образовательным порталом СДАМ ГИА',
