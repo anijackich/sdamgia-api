@@ -58,6 +58,11 @@ class SdamGIA:
         probBlock = soup.find('div', {'class': 'prob_maindiv'})
         if probBlock is None:
             return None
+        print(probBlock)
+        for i in probBlock.find_all('img'):
+            if not 'sdamgia.ru' in i['src']:
+                i['src'] = self._SUBJECT_BASE_URL[subject] + i['src']
+
 
         URL = f'{self._SUBJECT_BASE_URL[subject]}/problem?id={id}'
         TOPIC_ID = ' '.join(probBlock.find(
@@ -84,6 +89,12 @@ class SdamGIA:
                 ANALOGS.remove('Все')
 
         if not img is None:
+
+            for i in probBlock.find_all('div', {'class': 'minor'}):
+                i.decompose()
+            probBlock.find_all('div')[-1].decompose()
+
+
             if img == 'pyppeteer':
                 import asyncio
                 from pyppeteer import launch
@@ -97,9 +108,12 @@ class SdamGIA:
                 asyncio.get_event_loop().run_until_complete(main())
                 remove(path.abspath(f'{path_to_html}{id}.html'))
             elif img == 'grabzit':
-                from GrabzIt import GrabzItClient
+                from GrabzIt import GrabzItClient, GrabzItImageOptions
                 grabzIt = GrabzItClient.GrabzItClient(grabzit_auth['AppKey'], grabzit_auth['AppSecret'])
-                grabzIt.HTMLToImage(str(probBlock))
+                options = GrabzItImageOptions.GrabzItImageOptions()
+                options.browserWidth = 800
+                options.browserHeight = -1
+                grabzIt.HTMLToImage(str(probBlock), options=options)
                 grabzIt.SaveTo(path_to_img)
 
         return {'id': ID, 'topic': TOPIC_ID, 'condition': CONDITION, 'solution': SOLUTION, 'answer': ANSWER,
@@ -331,5 +345,4 @@ if __name__ == '__main__':
     sdamgia = SdamGIA()
     test = sdamgia.get_problem_by_id('math', '1001')
     print(test)
-
 
