@@ -6,6 +6,7 @@ import requests
 import threading
 from os import path, remove
 
+
 class SdamGIA:
     def __init__(self):
         self._BASE_DOMAIN = 'sdamgia.ru'
@@ -26,9 +27,12 @@ class SdamGIA:
             'hist': f'https://hist-ege.{self._BASE_DOMAIN}',
         }
         self.tesseract_src = 'tesseract'
-        self.html2img_google_path = 'html2img'
+        self.html2img_chrome_path = 'chrome'
+        self.grabzit_auth = {'AppKey': 'grabzit', 'AppSecret': 'grabzit'}
 
-    def get_problem_by_id(self, subject, id, img=None, path_to_img=None, path_to_html='', grabzit_auth=None):
+    def get_problem_by_id(self,
+                          subject, id,
+                          img=None, path_to_img=None, path_to_tmp_html=''):
         """
         Получение информации о задаче по ее идентификатору
 
@@ -60,13 +64,13 @@ class SdamGIA:
         probBlock = soup.find('div', {'class': 'prob_maindiv'})
         if probBlock is None:
             return None
-        print(probBlock)
+
         for i in probBlock.find_all('img'):
             if not 'sdamgia.ru' in i['src']:
                 i['src'] = self._SUBJECT_BASE_URL[subject] + i['src']
 
-
         URL = f'{self._SUBJECT_BASE_URL[subject]}/problem?id={id}'
+
         TOPIC_ID = ' '.join(probBlock.find(
             'span', {'class': 'prob_nums'}).text.split()[1:][:-2])
         ID = id
@@ -107,40 +111,41 @@ class SdamGIA:
         except AttributeError:
             pass
 
-
         if not img is None:
 
-            for i in probBlock.find_all('div', {'class': 'minor'}):
+            for i in probBlock.find_all('div', {'class': 'minor'}):  # delete the information parts of problem
                 i.decompose()
             probBlock.find_all('div')[-1].decompose()
 
-
+            # Pyppeteer
             if img == 'pyppeteer':
                 import asyncio
                 from pyppeteer import launch
-                open(f'{path_to_html}{id}.html', 'w').write(str(probBlock))
+                open(f'{path_to_tmp_html}{id}.html', 'w', encoding='utf-8').write(str(probBlock))
                 async def main():
                     browser = await launch()
                     page = await browser.newPage()
-                    await page.goto('file:' + path.abspath(f'{path_to_html}{id}.html'))
+                    await page.goto('file:' + path.abspath(f'{path_to_tmp_html}{id}.html'))
                     await page.screenshot({'path': path_to_img, 'fullPage': 'true'})
                     await browser.close()
                 asyncio.get_event_loop().run_until_complete(main())
-                remove(path.abspath(f'{path_to_html}{id}.html'))
+                remove(path.abspath(f'{path_to_tmp_html}{id}.html'))
 
+            # Grabz.it
             elif img == 'grabzit':
                 from GrabzIt import GrabzItClient, GrabzItImageOptions
-                grabzIt = GrabzItClient.GrabzItClient(grabzit_auth['AppKey'], grabzit_auth['AppSecret'])
+                grabzIt = GrabzItClient.GrabzItClient(self.grabzit_auth['AppKey'], self.grabzit_auth['AppSecret'])
                 options = GrabzItImageOptions.GrabzItImageOptions()
                 options.browserWidth = 800
                 options.browserHeight = -1
                 grabzIt.HTMLToImage(str(probBlock), options=options)
                 grabzIt.SaveTo(path_to_img)
 
+            # HTML2Image
             elif img == 'html2img':
                 from html2image import Html2Image
-                if self.html2img_google_path == 'html2img': hti = Html2Image()
-                else: hti = Html2Image(chrome_path=self.html2img_google_path, custom_flags=['--no-sandbox'])
+                if self.html2img_chrome_path == 'chrome': hti = Html2Image()
+                else: hti = Html2Image(chrome_path=self.html2img_chrome_path, custom_flags=['--no-sandbox'])
                 hti.screenshot(html_str=str(probBlock), save_as=path_to_img)
 
         return {'id': ID, 'topic': TOPIC_ID, 'condition': CONDITION, 'solution': SOLUTION, 'answer': ANSWER,
@@ -365,7 +370,6 @@ class SdamGIA:
             thread.join()
 
         return result
-
 
 
 if __name__ == '__main__':
