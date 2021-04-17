@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import os.path
 
 from bs4 import BeautifulSoup
 import requests
@@ -25,6 +26,7 @@ class SdamGIA:
             'hist': f'https://hist-ege.{self._BASE_DOMAIN}',
         }
         self.tesseract_src = 'tesseract'
+        self.html2img_google_path = 'html2img'
 
     def get_problem_by_id(self, subject, id, img=None, path_to_img=None, path_to_html='', grabzit_auth=None):
         """
@@ -125,6 +127,7 @@ class SdamGIA:
                     await browser.close()
                 asyncio.get_event_loop().run_until_complete(main())
                 remove(path.abspath(f'{path_to_html}{id}.html'))
+
             elif img == 'grabzit':
                 from GrabzIt import GrabzItClient, GrabzItImageOptions
                 grabzIt = GrabzItClient.GrabzItClient(grabzit_auth['AppKey'], grabzit_auth['AppSecret'])
@@ -133,6 +136,12 @@ class SdamGIA:
                 options.browserHeight = -1
                 grabzIt.HTMLToImage(str(probBlock), options=options)
                 grabzIt.SaveTo(path_to_img)
+
+            elif img == 'html2img':
+                from html2image import Html2Image
+                if self.html2img_google_path == 'html2img': hti = Html2Image()
+                else: hti = Html2Image(chrome_path=self.html2img_google_path, custom_flags=['--no-sandbox'])
+                hti.screenshot(html_str=str(probBlock), save_as=path_to_img)
 
         return {'id': ID, 'topic': TOPIC_ID, 'condition': CONDITION, 'solution': SOLUTION, 'answer': ANSWER,
                 'analogs': ANALOGS, 'url': URL}
@@ -361,5 +370,5 @@ class SdamGIA:
 
 if __name__ == '__main__':
     sdamgia = SdamGIA()
-    test = sdamgia.get_problem_by_id('math', '505452')
+    test = sdamgia.get_problem_by_id('math', '1001')
     print(test)
